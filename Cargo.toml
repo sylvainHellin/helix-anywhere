@@ -1,0 +1,46 @@
+[package]
+name = "helix-anywhere"
+version = "0.1.0"
+edition = "2021"
+description = "Edit text from any application using Helix editor"
+authors = ["Sylvain Hellin"]
+license = "MIT"
+repository = "https://github.com/sylvainhellin/helix-anywhere"
+homepage = "https://github.com/sylvainhellin/helix-anywhere"
+readme = "README.md"
+keywords = ["helix", "editor", "macos", "clipboard", "menu-bar"]
+categories = ["command-line-utilities", "text-editors"]
+
+[package.metadata.bundle]
+name = "Helix Anywhere"
+identifier = "com.helix-anywhere.helix-anywhere"
+icon = ["assets/AppIcon.icns"]
+category = "public.app-category.productivity"
+short_description = "Edit text from any app using Helix"
+copyright = "2025 Sylvain Hellin"
+osx_minimum_system_version = "11.0"
+
+[dependencies]
+# macOS native APIs
+cocoa = "0.26"
+objc = "0.2"
+core-foundation = "0.10"
+core-graphics = "0.24"
+
+# Clipboard
+arboard = "3.4"
+
+# Temp files
+tempfile = "3.14"
+
+# Error handling
+anyhow = "1.0"
+
+# Logging
+log = "0.4"
+env_logger = "0.11"
+
+# Configuration
+serde = { version = "1.0", features = ["derive"] }
+toml = "0.8"
+directories = "5.0"
