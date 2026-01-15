@@ -4,6 +4,8 @@ Edit text from any macOS application using [Helix](https://helix-editor.com/) ed
 
 ![Demo](https://img.shields.io/badge/platform-macOS-blue) ![License](https://img.shields.io/badge/license-MIT-green)
 
+<video src="assets/demo.mp4" autoplay loop muted playsinline></video>
+
 ## How it works
 
 1. **Select text** in any application (Outlook, Slack, Teams, VS Code, etc.)
@@ -97,6 +99,7 @@ On first run, macOS will prompt you to grant permissions. You can also enable th
 - **Quick edit**: Select text, press hotkey, edit, `:wq` to save and paste back
 - **Cancel**: Press `:q!` to quit without pasting (original text preserved)
 - **Change terminal**: Click the menu bar icon → Terminal → select your preferred terminal
+- **Change hotkey**: Click the menu bar icon → Hotkey → Record New Hotkey...
 
 ## Troubleshooting
 
@@ -133,3 +136,5 @@ MIT License - see [LICENSE](LICENSE) for details.
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+See [DEVELOPMENT.md](DEVELOPMENT.md) for build instructions and project structure.
