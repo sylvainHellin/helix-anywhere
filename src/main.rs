@@ -7,6 +7,7 @@ mod clipboard;
 mod config;
 mod edit_session;
 mod hotkey;
+mod hotkey_recorder;
 mod keystroke;
 mod menu_bar;
 mod terminal;
@@ -14,7 +15,6 @@ mod terminal;
 use anyhow::Result;
 use config::Config;
 use std::sync::{Arc, Mutex};
-use std::thread;
 
 fn main() -> Result<()> {
     // Initialize logging
@@ -43,15 +43,16 @@ fn main() -> Result<()> {
         }
     })?;
 
-    // Start hotkey listener in a separate thread
-    let hotkey_thread = thread::spawn(move || {
-        let config = config_for_hotkey.lock().unwrap();
-        let hotkey_config = config.hotkey.clone();
-        drop(config); // Release the lock
+    // Start hotkey listener with controller (supports runtime updates)
+    let hotkey_config = {
+        let cfg = config_for_hotkey.lock().unwrap();
+        cfg.hotkey.clone()
+    };
 
-        let config_for_callback = config_for_hotkey.clone();
-
-        let listener = match hotkey::HotkeyListener::from_config(&hotkey_config, move || {
+    let config_for_callback = config_for_hotkey.clone();
+    let hotkey_controller = hotkey::start_hotkey_listener_with_controller(
+        hotkey_config.clone(),
+        move || {
             // Clone config data so we don't hold the lock during the edit session
             // This prevents deadlock when user tries to change settings while editing
             let config_snapshot = {
@@ -61,26 +62,20 @@ fn main() -> Result<()> {
             if let Err(e) = edit_session::run_edit_session(&config_snapshot) {
                 log::error!("Edit session failed: {}", e);
             }
-        }) {
-            Ok(l) => l,
-            Err(e) => {
-                log::error!("Failed to create hotkey listener: {}", e);
-                return;
-            }
-        };
+        },
+    );
 
-        if let Err(e) = listener.start() {
-            log::error!("Hotkey listener failed: {}", e);
-        }
-    });
+    // Pass the controller to the menu system for hotkey updates
+    menu_bar::set_hotkey_controller(hotkey_controller);
 
-    log::info!("helix-anywhere is running. Press Cmd+Shift+; to edit selected text.");
+    let hotkey_display = hotkey::format_hotkey_display(&hotkey_config);
+    log::info!(
+        "helix-anywhere is running. Press {} to edit selected text.",
+        hotkey_display
+    );
 
     // Run the app event loop (blocking)
     menu_bar::run_app();
-
-    // Wait for hotkey thread (this won't actually be reached due to run_app)
-    let _ = hotkey_thread.join();
 
     Ok(())
 }
