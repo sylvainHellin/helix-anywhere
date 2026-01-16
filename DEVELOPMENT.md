@@ -10,59 +10,66 @@
 
 ## Building
 
-### Debug build
+There are three ways to build and run the app, depending on your goal:
+
+### Quick iteration (no app bundle)
+
+Run directly from source without creating an `.app` bundle. Fastest for development:
+
 ```bash
-cargo build
+cargo run --release
 ```
 
-### Release build
+Or with debug logging:
 ```bash
-cargo build --release
+RUST_LOG=debug cargo run --release
 ```
 
-The binary will be at `target/release/helix-anywhere`.
+This compiles and runs the binary directly. No `.app` bundle is created.
 
-## Creating the App Bundle
+### Local testing (app bundle)
 
-To create a proper macOS `.app` bundle:
+Create a macOS `.app` bundle for testing the full app experience:
 
 ```bash
 cargo bundle --release
 ```
 
-This creates the app at:
+This creates:
 ```
 target/release/bundle/osx/Helix Anywhere.app
 ```
 
-## Installing Locally
-
-After bundling, install to `/Applications`:
-
+Install to `/Applications`:
 ```bash
 cp -R "target/release/bundle/osx/Helix Anywhere.app" /Applications/
 ```
 
-Or to replace an existing installation:
-
+Or replace an existing installation:
 ```bash
 rm -rf "/Applications/Helix Anywhere.app"
 cp -R "target/release/bundle/osx/Helix Anywhere.app" /Applications/
 ```
 
-## Running for Development
+**Note:** `cargo bundle` won't rebuild if nothing changed. Run `cargo build --release` first if you need to force a rebuild.
 
-### Run directly (without bundling)
+### GitHub release (clean build + zip)
+
+For publishing a release, always start with a clean build to ensure everything is fresh:
+
 ```bash
-cargo run --release
+cargo clean
+cargo bundle --release
 ```
 
-### Run with debug logging
+Then create the zip:
 ```bash
-RUST_LOG=debug cargo run --release
+pushd target/release/bundle/osx && zip -r "Helix.Anywhere.app.zip" "Helix Anywhere.app" && popd
 ```
 
-## Creating a Release
+The release zip will be at `target/release/bundle/osx/Helix.Anywhere.app.zip`.
+
+## Release Checklist
 
 ### 1. Update version numbers
 
@@ -71,27 +78,15 @@ Update the version in two places:
 - `Cargo.toml`: `version = "X.Y.Z"`
 - `src/menu_bar.rs`: Search for `helix-anywhere v` and update the version string
 
-### 2. Build and bundle
+### 2. Build the release
 
 ```bash
-cargo build --release
+cargo clean
 cargo bundle --release
+pushd target/release/bundle/osx && zip -r "Helix.Anywhere.app.zip" "Helix Anywhere.app" && popd
 ```
 
-### 3. Create the release zip
-
-```bash
-cd target/release/bundle/osx
-zip -r Helix-Anywhere-vX.Y.Z.zip "Helix Anywhere.app"
-mv Helix-Anywhere-vX.Y.Z.zip ../../../../
-```
-
-Or as a one-liner:
-```bash
-(cd target/release/bundle/osx && zip -r ../../../../Helix-Anywhere-vX.Y.Z.zip "Helix Anywhere.app")
-```
-
-### 4. Create git tag and release
+### 3. Commit, tag, and push
 
 ```bash
 git add .
@@ -100,7 +95,9 @@ git tag vX.Y.Z
 git push origin main --tags
 ```
 
-Then create a GitHub release and upload the zip file.
+### 4. Create GitHub release
+
+Upload `target/release/bundle/osx/Helix.Anywhere.app.zip` to the GitHub release.
 
 ## Project Structure
 
