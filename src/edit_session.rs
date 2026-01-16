@@ -190,16 +190,24 @@ fn hash_content(content: &str) -> u64 {
     hasher.finish()
 }
 
-/// Wait for the file to be modified or deleted
+/// Check if any process has the file open (using lsof)
+fn is_file_open(path: &Path) -> bool {
+    Command::new("lsof")
+        .arg(path)
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false)
+}
+
+/// Wait for the file to be modified or for the editor to close
 /// This is used for terminals that can't be waited on directly (Ghostty, iTerm, Terminal.app)
-/// TODO: Replace with a more elegant solution (filesystem watcher, AppleScript check)
 fn wait_for_file_change(path: &Path, original_mtime: SystemTime) -> Result<()> {
     const POLL_INTERVAL: Duration = Duration::from_millis(100);
     const TIMEOUT: Duration = Duration::from_secs(3600); // 1 hour timeout
 
     let start = std::time::Instant::now();
 
-    // Small delay to let the terminal open
+    // Small delay to let the terminal open and helix to start
     thread::sleep(Duration::from_millis(500));
 
     loop {
@@ -223,6 +231,13 @@ fn wait_for_file_change(path: &Path, original_mtime: SystemTime) -> Result<()> {
                 // We'll let the caller handle this (it will fail to read the file)
                 return Ok(());
             }
+        }
+
+        // Check if helix/editor still has the file open
+        // If not, the user closed the editor without saving (:q!)
+        if !is_file_open(path) {
+            log::info!("Editor closed without modifying file (user likely used :q!)");
+            return Ok(());
         }
 
         thread::sleep(POLL_INTERVAL);
